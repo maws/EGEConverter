@@ -1,1 +1,1 @@
-Converts FBX models into a light-weight format used by the Erruption Game Engine
+Converts FBX models into a light-weight format used by the Eruption Game Engine
