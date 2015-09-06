@@ -4,13 +4,16 @@
 #include <stdio.h>
 #include <string>
 
+
+using namespace fbxsdk_2015_1;
+
 int main(int argc, char *argv[])
 {
 	// The master vertices list used for exporting
-	float* vertices = nullptr; // Allocate when we know length
+	float* vertexBuffer = nullptr; // Allocate when we know length
 	unsigned numVerts = 0;
 
-	std::string fileName = "cube.fbx";
+	std::string fileName = argv[1];
 	printf("Importing %s \n", fileName.c_str());
 	
 	// Strip extension
@@ -75,28 +78,17 @@ int main(int argc, char *argv[])
 					{
 						FbxMesh* mesh = (FbxMesh*)node->GetNodeAttribute();
 						printf("Mesh name: %s \n", (char*)node->GetName());
-						numVerts = mesh->GetPolygonVertexCount() * 3;
-						vertices = new float[numVerts];
-						auto polyCount = mesh->GetPolygonCount();
-						FbxVector4* controlPoints = mesh->GetControlPoints();
+		
+						numVerts = mesh->GetControlPointsCount();
+						vertexBuffer = new float[numVerts * 3];
+						FbxVector4* vertexArray = mesh->GetControlPoints();
 
-						// Loop polys
-						for (int poly = 0; poly < polyCount; ++poly)
+						for (unsigned j = 0; j < numVerts; ++j)
 						{
-							auto polySize = mesh->GetPolygonSize(poly);
-							for (int polyVertex = 0; polyVertex < polySize; ++polyVertex)
-							{
-								int controlPointIndex = mesh->GetPolygonVertex(poly, polyVertex);
-								FbxVector4 coordinate = controlPoints[controlPointIndex];
-								printf("Polygon %d vertex %d has coordinate %f %f %f \n", poly, polyVertex, coordinate[0], coordinate[1], coordinate[2]);
-
-								// Trying to keep it platforms friendly here
-								// e.g. The Vertex struct can be padded differently
-								// So copy each element one at a time instead of whole Vertex struct
-								int dstIndex = (poly * polySize * 3) + (polyVertex * 3);
-								float currentPolyVerts[3] = { coordinate[0], coordinate[1], coordinate[2] };
-								memcpy(&vertices[dstIndex], currentPolyVerts, sizeof(currentPolyVerts));
-							}
+							printf("Vertex %d has coordinates %f %f %f \n", j, vertexArray[j][0], vertexArray[j][1], vertexArray[j][2]);
+							float verts[3] = { vertexArray[j][0], vertexArray[j][1], vertexArray[j][2] };
+							int dstIndex = j * 3;
+							memcpy(&vertexBuffer[dstIndex], &verts, sizeof(verts));
 						}
 					}
 					break;
@@ -109,17 +101,13 @@ int main(int argc, char *argv[])
 	printf("Exporting to e3m... \n");
 	fileNameRaw.append(".e3m");
 
-	float b[72];
-	for (int i = 0; i < 72; ++i)
-		b[i] = vertices[i];
-
 	{ // Write
 		FILE* file;
 		file = fopen(fileNameRaw.c_str(), "wb");
 		// Write the number of vertices
 		fwrite(&numVerts, sizeof(unsigned), 1, file);
 		// Write vertices
-		fwrite(vertices, sizeof(float), numVerts, file);
+		fwrite(vertexBuffer, sizeof(float), numVerts * 3, file);
 		fclose(file);
 	}
 	{ // Read
@@ -127,17 +115,13 @@ int main(int argc, char *argv[])
 		FILE* file;
 		file = fopen(fileNameRaw.c_str(), "rb");
 		fread(&numVerts, sizeof(unsigned), 1, file);
-		fread(buffer, sizeof(float), numVerts, file);
+		fread(buffer, sizeof(float), numVerts * 3, file);
 		fclose(file);
-
-		float b[72];
-		for (int i = 0; i < 72; ++i)
-			b[i] = buffer[i];
 		delete buffer;
 	}
 
 	printf("...Finished: Cleaning up. \n");
-	delete vertices;
+	delete vertexBuffer;
 	manager->Destroy();
 	return 0;
 }
