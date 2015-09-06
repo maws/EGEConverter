@@ -111,13 +111,14 @@ int main(int argc, char *argv[])
 		fclose(file);
 	}
 	{ // Read
-		float* buffer = new float[numVerts];
+		float* buffer = new float[numVerts * 3];
 		FILE* file;
+		unsigned num = 0;
 		file = fopen(fileNameRaw.c_str(), "rb");
-		fread(&numVerts, sizeof(unsigned), 1, file);
-		fread(buffer, sizeof(float), numVerts * 3, file);
+		fread(&num, sizeof(unsigned), 1, file);
+		fread(buffer, sizeof(float), num * 3, file);
 		fclose(file);
-		delete buffer;
+		delete[] buffer;
 	}
 
 	printf("...Finished: Cleaning up. \n");
