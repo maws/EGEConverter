@@ -78,17 +78,16 @@ int main(int argc, char *argv[])
 					{
 						FbxMesh* mesh = (FbxMesh*)node->GetNodeAttribute();
 						printf("Mesh name: %s \n", (char*)node->GetName());
-		
 						numVerts = mesh->GetControlPointsCount();
 						vertexBuffer = new float[numVerts * 3];
-						FbxVector4* vertexArray = mesh->GetControlPoints();
 
 						for (unsigned j = 0; j < numVerts; ++j)
 						{
-							printf("Vertex %d has coordinates %f %f %f \n", j, vertexArray[j][0], vertexArray[j][1], vertexArray[j][2]);
-							float verts[3] = { vertexArray[j][0], vertexArray[j][1], vertexArray[j][2] };
+							float verts[3] = { static_cast<float>(mesh->GetControlPointAt(j).mData[0]), static_cast<float>(mesh->GetControlPointAt(j).mData[1]), static_cast<float>(mesh->GetControlPointAt(j).mData[2]) };
 							int dstIndex = j * 3;
 							memcpy(&vertexBuffer[dstIndex], &verts, sizeof(verts));
+
+							printf("Vertex %d has coordinates %f %f %f \n", j, verts[0], verts[1], verts[2]);
 						}
 					}
 					break;
@@ -98,6 +97,7 @@ int main(int argc, char *argv[])
 	}
 
 	printf("Total vertices: %d \n", numVerts);
+	printf("Total values: %d \n", numVerts * 3);
 	printf("Exporting to e3m... \n");
 	fileNameRaw.append(".e3m");
 
@@ -110,6 +110,9 @@ int main(int argc, char *argv[])
 		fwrite(vertexBuffer, sizeof(float), numVerts * 3, file);
 		fclose(file);
 	}
+
+	// This is how you read
+	/*
 	{ // Read
 		float* buffer = new float[numVerts * 3];
 		FILE* file;
@@ -119,7 +122,7 @@ int main(int argc, char *argv[])
 		fread(buffer, sizeof(float), num * 3, file);
 		fclose(file);
 		delete[] buffer;
-	}
+	}*/
 
 	printf("...Finished: Cleaning up. \n");
 	delete vertexBuffer;
