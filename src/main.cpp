@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
 	float* vertices = nullptr; // Allocate when we know length
 	unsigned numVerts = 0;
 
-	std::string fileName = argv[1];
+	std::string fileName = "cube.fbx";
 	printf("Importing %s \n", fileName.c_str());
 	
 	// Strip extension
@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 								// Trying to keep it platforms friendly here
 								// e.g. The Vertex struct can be padded differently
 								// So copy each element one at a time instead of whole Vertex struct
-								int dstIndex = polyVertex * 3;
+								int dstIndex = (poly * polySize * 3) + (polyVertex * 3);
 								float currentPolyVerts[3] = { coordinate[0], coordinate[1], coordinate[2] };
 								memcpy(&vertices[dstIndex], currentPolyVerts, sizeof(currentPolyVerts));
 							}
@@ -109,12 +109,15 @@ int main(int argc, char *argv[])
 	printf("Exporting to e3m... \n");
 	fileNameRaw.append(".e3m");
 
+	float b[72];
+	for (int i = 0; i < 72; ++i)
+		b[i] = vertices[i];
+
 	{ // Write
 		FILE* file;
 		file = fopen(fileNameRaw.c_str(), "wb");
 		// Write the number of vertices
 		fwrite(&numVerts, sizeof(unsigned), 1, file);
-		auto last = vertices[5];
 		// Write vertices
 		fwrite(vertices, sizeof(float), numVerts, file);
 		fclose(file);
@@ -126,6 +129,10 @@ int main(int argc, char *argv[])
 		fread(&numVerts, sizeof(unsigned), 1, file);
 		fread(buffer, sizeof(float), numVerts, file);
 		fclose(file);
+
+		float b[72];
+		for (int i = 0; i < 72; ++i)
+			b[i] = buffer[i];
 		delete buffer;
 	}
 
