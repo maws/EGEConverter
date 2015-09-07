@@ -78,16 +78,25 @@ int main(int argc, char *argv[])
 					{
 						FbxMesh* mesh = (FbxMesh*)node->GetNodeAttribute();
 						printf("Mesh name: %s \n", (char*)node->GetName());
-						numVerts = mesh->GetControlPointsCount();
+						
+						FbxVector4* controlPoints = mesh->GetControlPoints();
+						int triCount = mesh->GetPolygonCount();
+						numVerts = triCount * 3;
 						vertexBuffer = new float[numVerts * 3];
-
-						for (unsigned j = 0; j < numVerts; ++j)
+						int vertexCounter = 0;
+						for (int j = 0; j < triCount; ++j)
 						{
-							float verts[3] = { static_cast<float>(mesh->GetControlPointAt(j).mData[0]), static_cast<float>(mesh->GetControlPointAt(j).mData[1]), static_cast<float>(mesh->GetControlPointAt(j).mData[2]) };
-							int dstIndex = j * 3;
-							memcpy(&vertexBuffer[dstIndex], &verts, sizeof(verts));
-
-							printf("Vertex %d has coordinates %f %f %f \n", j, verts[0], verts[1], verts[2]);
+							for (unsigned k = 0; k < 3; ++k)
+							{
+								int ctrlPointIndex = mesh->GetPolygonVertex(j, k);
+								FbxVector4 currentControlPoint = controlPoints[ctrlPointIndex];
+								float verts[3] = { static_cast<float>(currentControlPoint.mData[0]), static_cast<float>(currentControlPoint.mData[1]), static_cast<float>(currentControlPoint.mData[2]) };
+								printf("Vertex %d has coordinates %f %f %f \n", j, verts[0], verts[1], verts[2]);
+								
+								int dstIndex = (j * 3 * 3) + (k * 3);
+								memcpy(&vertexBuffer[dstIndex], verts, sizeof(verts));
+								++vertexCounter;
+							}
 						}
 					}
 					break;
